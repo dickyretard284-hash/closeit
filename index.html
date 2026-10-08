@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Trivia Showdown</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Scoreboard Header -->
+        <div class="header">
+            <span class="score-board">Tokens: <span id="score">0</span> 🪙</span>
+        </div>
+
+        <!-- Question Box Area -->
+        <div class="card">
+            <h2 id="question">Loading question...</h2>
+        </div>
+
+        <!-- Multiple Choice Grid Area -->
+        <div class="answers-grid">
+            <button class="answer-btn" onclick="checkAnswer(0)"></button>
+            <button class="answer-btn" onclick="checkAnswer(1)"></button>
+            <button class="answer-btn" onclick="checkAnswer(2)"></button>
+            <button class="answer-btn" onclick="checkAnswer(3)"></button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
