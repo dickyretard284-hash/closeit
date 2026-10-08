@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Trivia Showdown</title>
+    <style>
+        /* ==========================================
+           1. GAME STYLES (CSS)
+           ========================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        /* HUD PROFILE HEADER */
+        .navbar {
+            background-color: #1e293b;
+            border-bottom: 3px solid #334155;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #3b82f6;
+            cursor: pointer;
+        }
+
+        .hud-stats {
+            display: flex;
+            align-items: center;
+        }
+
+        .hud-item {
+            background-color: #0f172a;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 8px;
+            border: 1px solid #475569;
+        }
+
+        /* CONTAINER SETUP */
+        .game-container {
+            width: 90%;
+            max-width: 650px;
+            margin: 40px auto;
+            text-align: center;
+        }
+
+        .game-screen { display: none; position: relative; }
+        .game-screen.active { display: block; }
+
+        .title {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #f97316, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle { color: #94a3b8; margin-bottom: 30px; }
+        .section-title { font-size: 2rem; margin-bottom: 5px; }
+
+        /* TIME CONFIG TEXT BOX ROW */
+        .timer-config-wrapper {
+            margin-bottom: 20px;
+            background-color: #1e293b;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #334155;
+        }
+        .timer-config-label {
+            font-weight: bold;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+        .timer-inputs-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .timer-input-box {
+            width: 70px;
+            padding: 10px;
+            background-color: #0f172a;
+            border: 2px solid #475569;
+            color: white;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            text-align: center;
+            font-weight: bold;
+        }
+        .timer-input-box:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+        .timer-colon {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #475569;
+        }
+
+        /* FLAG INTERACTIVE OVERLAY ICON */
+        .flag-stop-anchor {
+            position: absolute;
+            top: -15px;
+            right: 0px;
+            font-size: 2rem;
+            cursor: pointer;
+            background-color: #1e293b;
+            border: 2px solid #ef4444;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+        .flag-stop-anchor:hover { transform: scale(1.1); }
+        .flag-stop-anchor:active { transform: scale(0.9); }
+
+        /* 3D ACTION BUTTONS */
+        .menu-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 350px;
+            margin: 0 auto;
+        }
+
+        .menu-btn {
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            color: white;
+            text-align: center;
+        }
+
+        .primary-btn { background-color: #22c55e; box-shadow: 0 5px 0 #16a34a; }
+        .secondary-btn { background-color: #3b82f6; box-shadow: 0 5px 0 #2563eb; }
+        .accent-btn { background-color: #a855f7; box-shadow: 0 5px 0 #9333ea; }
+        .warning-btn { background-color: #f97316; box-shadow: 0 5px 0 #ea580c; margin-top: 10px; }
+
+        .menu-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        /* LIST GRIDS (DISCOVER & SELECT) */
+        .discover-container { margin: 20px 0; }
+        .set-card {
+            background-color: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+            margin-bottom: 12px;
+        }
+
+        .set-info h3 { color: #3b82f6; margin-bottom: 4px; }
+        .set-info p { color: #94a3b8; font-size: 0.9rem; }
+        
+        .select-set-btn {
+            background-color: #22c55e; border: none; color: white;
+            font-weight: bold; padding: 10px 18px; border-radius: 8px; cursor: pointer;
+        }
+        .select-set-btn.active { background-color: #a855f7; cursor: default; }
+
+        /* FORMS FOR CREATOR SCREEN */
+        .creator-form {
+            background-color: #1e293b; border: 2px solid #334155; border-radius: 16px;
+            padding: 25px; text-align: left; margin-bottom: 20px;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 6px; color: #94a3b8; }
+        .form-group input {
+            width: 100%; padding: 12px; background-color: #0f172a;
+            border: 2px solid #334155; color: white; border-radius: 8px; font-size: 1rem;
+        }
+        .question-builder-box { border-top: 2px dashed #334155; margin-top: 20px; padding-top: 20px; }
+
+        /* TRIVIA LAYOUT */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding-right: 60px; /* Space for flag icon */
+            text-align: left;
+        }
+
+        .timer-box { color: #ef4444; }
+        .round-score { color: #eab308; }
+        .active-pack-indicator { color: #3b82f6; font-size: 0.9rem; margin-bottom: 15px; }
+
+        .card {
+            background-color: #1e293b; border-radius: 15px; padding: 40px 20px;
+            margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); border: 3px solid #334155;
+        }
+
+        .answers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .answer-btn {
+            color: white; border: none; padding: 22px; font-size: 1.1rem;
+            font-weight: bold; border-radius: 12px; cursor: pointer; transition: transform 0.05s;
+        }
+
+        #btn-0 { background-color: #ef4444; box-shadow: 0 5px 0 #dc2626; }
+        #btn-1 { background-color: #3b82f6; box-shadow: 0 5px 0 #2563eb; }
+        #btn-2 { background-color: #eab308; box-shadow: 0 5px 0 #ca8a04; }
+        #btn-3 { background-color: #22c55e; box-shadow: 0 5px 0 #16a34a; }
+
+        .answer-btn:active { transform: translateY(5px); box-shadow: none; }
+        .leave-btn, .back-btn {
+            background: transparent; color: #94a3b8; border: 2px solid #334155;
+            padding: 8px 16px; border-radius: 8px; margin-top: 25px; cursor: pointer;
+        }
+
+        /* MARKET SHOP CARD BOARDS */
+        .market-shelf { display: flex; justify-content: center; margin-top: 20px; }
+        .pack-card {
+            background-color: #1e293b; border: 3px solid #475569; padding: 20px;
+            border-radius: 16px; width: 200px; cursor: pointer;
+        }
+        .pack-icon { font-size: 3.5rem; margin-bottom: 10px; }
+        .buy-btn {
+            background-color: #f97316; border: none; padding: 8px 16px;
+            color: white; font-weight: bold; border-radius: 6px; margin-top: 10px; cursor: pointer;
+        }
+
+        /* UNBOXING OVERLAY MODAL */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(15, 23, 42, 0.95); display: flex; justify-content: center; align-items: center;
+            z-index: 999;
+        }
+        .modal.hidden { display: none; }
+        .modal-content { background-color: #1e293b; border: 4px solid #eab308; border-radius: 20px; padding: 30px; width: 280px; }
+        .large-blook { font-size: 5.5rem; margin: 15px 0; animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .close-modal-btn {
+            background-color: #22c55e; border: none; padding: 10px 20px;
+            color: white; font-weight: bold; border-radius: 8px; margin-top: 15px; cursor: pointer;
+        }
+
+        /* INVENTORY INTERFACE GRID CONFIGS */
+        .collection-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin-top: 20px; }
+        .blook-card { background-color: #1e293b; border: 2px solid #334155; padding: 15px 5px; border-radius: 12px; }
+        .blook-card.locked { opacity: 0.2; filter: grayscale(1); }
+        .blook-emoji { font-size: 2.2rem; }
+        .blook-qty { font-size: 0.8rem; color: #ca8a04; margin-top: 4px; font-weight: bold; }
+
+        /* RARITY LABELS */
+        .Common { color: #94a3b8; }
+        .Rare { color: #60a5fa; }
+        .Epic { color: #c084fc; }
+        .Legendary { color: #fbbf24; font-weight: bold; text-shadow: 0 0 8px rgba(251,191,36,0.4); }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo" onclick="showScreen('screen-home')">⚡ Blook Arcade</div>
+        <div class="hud-stats">
+            <span class="hud-item">Tokens: <span id="hud-tokens">0</span> 🪙</span>
+            <span class="hud-item">Collection: <span id="hud-collection">0</span>/6</span>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div id="screen-home" class="game-screen active">
+            <h1 class="title">Trivia Blitz</h1>
+            <p class="subtitle">Answer custom trivia sets, earn tokens, and collect rare Blooks!</p>
+            <div class="active-pack-indicator">Selected Set: <span id="selected-set-label" style="font-weight: bold; color: #22c55e;">Minecraft Master Pack</span></div>
+            
+            <div class="timer-config-wrapper">
+                <div class="timer-config-label">⏰ Custom Timer Duration (Max 1 Hour / 60:00):</div>
+                <div class="timer-inputs-row">
+                    <input type="number" id="input-mins" class="timer-input-box" value="1" min="0" max="60" placeholder="MM">
+                    <span class="timer-colon">:</span>
+                    <input type="number" id="input-secs" class="timer-input-box" value="0" min="0" max="59" placeholder="SS">
+                </div>
+            </div>
+
+            <div class="menu-grid">
+                <button class="menu-btn primary-btn" onclick="startTimerGame()">⚔️ Play Match</button>
+                <button class="menu-btn secondary-btn" onclick="openDiscoverScreen()">🌍 Discover Sets</button>
+                <button class="menu-btn accent-btn" onclick="openCreatorScreen()">🛠️ Set Creator</button>
+                <button class="menu-btn warning-btn" onclick="showScreen('screen-market')">🛒 Blook Market</button>
+                <button class="menu-btn leave-btn" onclick="viewCollection()" style="margin-top:0;">🎒 My Collection</button>
+            </div>
+        </div>
+
+        <div id="screen-game" class="game-screen">
+            <div class="flag-stop-anchor" title="Stop Match Early & Cash Out" onclick="forceStopClockFlag()">🚩</div>
+
+            <div class="game-header">
+                <div class="timer-box">⏰ Time Left: <span id="timer-clock">01:00</span></div>
+                <div class="round-score">Match Tokens: <span id="match-tokens">0</span></div>
+            </div>
+            <div class="card">
+                <h2 id="question">Loading trivia...</h2>
+            </div>
+            <div class="answers-grid">
+                <button class="answer-btn" id="btn-0" onclick="checkAnswer(0)"></button>
+                <button class="answer-btn" id="btn-1" onclick="checkAnswer(1)"></button>
+                <button class="answer-btn" id="btn-2" onclick="checkAnswer(2)"></button>
+                <button class="answer-btn" id="btn-3" onclick="checkAnswer(3)"></button>
+            </div>
+            <button class="leave-btn" onclick="quitGame()">🏳️ Quit Match</button>
+        </div>
+
+        <div id="screen-discover" class="game-screen">
+            <h2 class="section-title">Discover Question Sets</h2>
+            <p class="subtitle">Choose a pre-made network set or find your custom creations!</p>
+            <div id="discover-sets-container" class="discover-container"></div>
+            <button class="back-btn" onclick="showScreen('screen-home')">⬅️ Back Home</button>
+        </div>
+
+        <div id="screen-creator" class="game-screen">
+            <h2 class="section-title">Create Custom Question Set</h2>
+            <p class="subtitle">Design your own quiz questions and play them instantly!</p>
+            
+            <div class="creator-form">
+                <div class="form-group">
+                    <label for="set-title-input">Set Title Name</label>
+                    <input type="text" id="set-title-input" placeholder="e.g., Ultimate Roblox Trivia">
+                </div>
+                <div class="form-group">
+                    <label for="set-author-input">Creator Username</label>
+                    <input type="text" id="set-author-input" placeholder="e.g., Guest123">
+                </div>
+
+                <div class="question-builder-box">
+                    <h4 style="margin-bottom: 10px; color: #3b82f6;">Add Question #<span id="creator-q-number">1</span></h4>
+                    <div class="form-group">
+                        <label>Trivia Question Prompt</label>
+                        <input type="text" id="q-prompt" placeholder="e.g., What color is an emerald?">
+                    </div>
+                    <div class="form-group">
+                        <label style="color: #22c55e;">Answer choice 1 (Always make this the Correct one!)</label>
+                        <input type="text" id="q-ans-correct" placeholder="Correct Answer">
+                    </div>
+                    <div class="form-group">
+                        <label style="color: #ef4444;">Answer Choice 2 (Incorrect option)</label>
+                        <input type="text" id="q-ans-w1" placeholder="Wrong Choice A">
+                    </div>
+                    <div class="form-group">
+                        <label style="color: #ef4444;">Answer Choice 3 (Incorrect option)</label>
+                        <input type="text" id="q-ans-w2" placeholder="Wrong Choice B">
+                    </div>
+                    <div class="form-group">
+                        <label style="color: #ef4444;">Answer Choice 4 (Incorrect option)</label>
+                        <input type="text" id="q-ans-w3" placeholder="Wrong Choice C">
+                    </div>
+                    
+                    <button class="menu-btn primary-btn" onclick="addQuestionToDraft()" style="width: 100%; padding: 12px; margin-bottom: 10px;">➕ Add Question Card</button>
+                    <p style="font-size: 0.85rem; color: #94a3b8; text-align: center;">Questions currently built in this custom bundle: <span id="draft-count" style="font-weight: bold; color: #a855f7;">0</span></p>
+                </div>
+            </div>
+
+            <button class="menu-btn secondary-btn" onclick="saveCompleteCustomSet()" style="width: 100%;">💾 Save and Publish Pack</button>
+            <button class="back-btn" onclick="showScreen('screen-home')">⬅️ Cancel</button>
+        </div>
+
+        <div id="screen-market" class="game-screen">
+            <h2 class="section-title">The Token Market</h2>
+            <p class="subtitle">Spend 20 tokens to drop a random mystery character!</p>
+            <div class="market-shelf">
+                <div class="pack-card" onclick="openPack()">
+                    <div class="pack-icon">📦</div>
+                    <h3>Gaming Pack</h3>
+                    <button class="buy-btn">Open (20 🪙)</button>
+                </div>
+            </div>
+            <button class="back-btn" onclick="showScreen('screen-home')">⬅️ Back Home</button>
+
+            <div id="unlock-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2 id="modal-rarity">NEW BLOOK!</h2>
+                    <div id="modal-emoji" class="large-blook">❓</div>
+                    <h1 id="modal-name">Character</h1>
+                    <p id="modal-tier">Rarity</p>
+                    <button class="close-modal-btn" onclick="closeModal()">Awesome!</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-collection" class="game-screen">
+            <h2 class="section-title">Your Unlocked Blooks</h2>
+            <div id="collection-grid" class="collection-grid"></div>
+            <button class="back-btn" onclick="showScreen('screen-home')">⬅️ Back Home</button>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================
+           2. GAME ENGINE LOGIC (JAVASCRIPT)
+           ========================================== */
+        
+        const defaultDiscoverSets = [
+            {
+                id: "set_minecraft",
+                title: "Minecraft Master Pack",
+                author: "CommunityServer",
+                questions: [
+                    { q: "Which game features creepers, endermen, and blocky miners?", options: ["Minecraft", "Terraria", "Roblox", "Fortnite"], correct: 0 },
+                    { q: "Which tool do you use to host multiplayer Minecraft worlds for free?", options: ["Aternos", "GitHub", "Canva", "Discord Quest"], correct: 0 },
+                    { q: "Which creature do you fight as the final underworld boss in Terraria?", options: ["Wall of Flesh", "Eye of Cthulhu", "Skeletron", "The Destroyer"], correct: 0 }
+                ]
+            },
+            {
+                id: "set_rocket_league",
+                title: "Rocket League Arena Quiz",
+                author: "RL_Pro",
+                questions: [
+                    { q: "What item type are Fennec, Octane, and Dominus inside Rocket League?", options: ["Car Bodies", "Decals", "Goal Explosions", "Wheels"], correct: 0 },
+                    { q: "In Geometry Dash, what speed value does a 3x speed portal represent?", options: ["Very Fast", "Slow", "Normal", "Fast"], correct: 0 }
+                ]
+            },
+            {
+                id: "set_clash_royale",
+                title: "Clash Royale Strategy Set",
+                author: "SupercellFan",
+                questions: [
+                    { q: "Which character deck card has a massive metal armor set in Clash Royale?", options: ["P.E.K.K.A", "Goblin", "Archer", "Hog Rider"], correct: 0 },
+                    { q: "What is the primary currency code used across Roblox game servers?", options: ["Robux", "Minecoins", "V-Bucks", "Tokens"], correct: 0 }
+                ]
+            }
+        ];
+
+        const blookRegistry = [
+            { id: "blook_slime", name: "Slime", emoji: "🟢", rarity: "Common", weight: 60 },
+            { id: "blook_golem", name: "Iron Golem", emoji: "🤖", rarity: "Common", weight: 40 },
+            { id: "blook_creeper", name: "Creeper", emoji: "🥦", rarity: "Rare", weight: 20 },
+            { id: "blook_fennec", name: "Fennec Racer", emoji: "🏎️", rarity: "Epic", weight: 8 },
+            { id: "blook_pekka", name: "P.E.K.K.A", emoji: "⚔️", rarity: "Legendary", weight: 2 },
+            { id: "blook_chroma", name: "Chroma Cube", emoji: "🌈", rarity: "Legendary", weight: 0.5 }
+        ];
+
+        let userData = {
+            tokens: 0,
+            inventory: {},
+            customSets: []
+        };
+
+        blookRegistry.forEach(b => { userData.inventory[b.id] = 0; });
+
+        let globalActivePack = defaultDiscoverSets[0]; 
+        let activeMatchQuestions = [];
+        let currentQuestionIndex = 0;
+        let matchTokensEarned = 0;
+        let gameTimer = null;
+        let timeLeft = 60; 
+        let draftQuestionsArray = []; 
+        let liveCorrectTextString = "";
+
+        function showScreen(id) {
+            document.querySelectorAll('.game-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (id === 'screen-home') stopClock();
+        }
+
+        function updateHUD() {
+            document.getElementById("hud-tokens").innerText = userData.tokens;
+            let uniqueUnlocked = Object.values(userData.inventory).filter(q => q > 0).length;
+            document.getElementById("hud-collection").innerText = uniqueUnlocked;
+            document.getElementById("selected-set-label").innerText = globalActivePack.title;
+            localStorage.setItem("arcade_save_data_v5", JSON.stringify(userData));
+        }
+
+        function formatClockString(totalSeconds) {
+            let m = Math.floor(totalSeconds / 60);
+            let s = totalSeconds % 60;
+            return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+        }
+
+        function forceStopClockFlag() {
+            stopClock();
+            userData.tokens += matchTokensEarned;
+            alert(`🚩 Flag Triggered! Match finished early. You cashed out and saved ${matchTokensEarned} tokens!`);
+            showScreen('screen-home');
+            updateHUD();
+        }
+
+        function startTimerGame() {
+            if (!globalActivePack || globalActivePack.questions.length === 0) {
+                alert("🚨 No trivia loaded inside this pack. Choose an alternative set!");
+                return;
+            }
+
+            let userMins = parseInt(document.getElementById("input-mins").value) || 0;
+            let userSecs = parseInt(document.getElementById("input-secs").value) || 0;
+            let calculatedTotalSeconds = (userMins * 60) + userSecs;
+
+            if (calculatedTotalSeconds <= 0) {
+                alert("🚨 Invalid time configuration! Set a value higher than 0 seconds.");
+                return;
+            }
+            
+            if (calculatedTotalSeconds > 3600) {
+                alert("🚨 Over Limit! Max game timeline threshold is 1 Hour (60:00). Auto snapping down.");
+                calculatedTotalSeconds = 3600;
+                document.getElementById("input-mins").value = 60;
+                document.getElementById("input-secs").value = 0;
+            }
+
+            matchTokensEarned = 0;
+            timeLeft = calculatedTotalSeconds; 
+            
+            document.getElementById("match-tokens").innerText = matchTokensEarned;
+            document.getElementById("timer-clock").innerText = formatClockString(timeLeft);
+            
+            activeMatchQuestions = JSON.parse(JSON.stringify(globalActivePack.questions));
+
+            showScreen('screen-game');
+            nextQuestion();
+
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById("timer-clock").innerText = formatClockString(timeLeft);
+                if (timeLeft <= 0) {
+                    stopClock();
+                    userData.tokens += matchTokensEarned;
+                    alert(`⏱️ Time is Up! You brought home ${matchTokensEarned} tokens from this arcade round!`);
+                    showScreen('screen-home');
+                    updateHUD();
+                }
+            }, 1000);
+        }
+
+        function stopClock() { if (gameTimer) { clearInterval(gameTimer); gameTimer = null; } }
+        function quitGame() { stopClock(); showScreen('screen-home'); }
+
+        function shuffleOptionsArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex = Math.floor(Math.random() * activeMatchQuestions.length);
+            const activeRawData = activeMatchQuestions[currentQuestionIndex];
+            
+            document.getElementById("question").innerText = activeRawData.q;
+            liveCorrectTextString = activeRawData.options[activeRawData.correct];
+
+            let buttonValuesList = [...activeRawData.options];
+            shuffleOptionsArray(buttonValuesList);
+
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`btn-${i}`).innerText = buttonValuesList[i];
+            }
+        }
+
+        function checkAnswer(btnIdx) {
+            const chosenText = document.getElementById(`btn-${btnIdx}`).innerText;
+            if (chosenText === liveCorrectTextString) {
+                matchTokensEarned += 5;
+                document.getElementById("match-tokens").innerText = matchTokensEarned;
+            }
+            nextQuestion();
+        }
+
+        function openDiscoverScreen() {
+            const container = document.getElementById("discover-sets-container");
+            container.innerHTML = ""; 
+
+            const totalAvailableSets = [...defaultDiscoverSets, ...userData.customSets];
+
+            totalAvailableSets.forEach(set => {
+                const card = document.createElement("div");
+                card.className = "set-card";
+                
+                const isSelected = globalActivePack.id === set.id;
+                const buttonText = isSelected ? "Selected ✅" : "Select Set ⚔️";
+                const activeClass = isSelected ? "active" : "";
+
+                card.innerHTML = `
+                    <div class="set-info">
+                        <h3>${set.title}</h3>
+                        <p>Created by: @${set.author} • ${set.questions.length} Questions</p>
+                    </div>
+                    <button class="select-set-btn ${activeClass}" ${isSelected ? 'disabled' : ''} onclick="selectActivePack('${set.id}')">${buttonText}</button>
+                `;
+                container.appendChild(card);
+            });
+
+            showScreen('screen-discover');
+        }
+
+        function selectActivePack(setId) {
+            const totalAvailableSets = [...defaultDiscoverSets, ...userData.customSets];
+            const foundSet = totalAvailableSets.find(s => s.id === setId);
+            if (foundSet) {
+                globalActivePack = foundSet;
+                updateHUD();
+                alert(`🎯 Activated Trivia Pack: "${foundSet.title}"`);
+                showScreen('screen-home');
+            }
+        }
+
+        function openCreatorScreen() {
+            draftQuestionsArray = [];
+            document.getElementById("set-title-input").value = "";
+            document.getElementById("set-author-input").value = "";
+            resetQuestionBuilderInputs();
+            document.getElementById("draft-count").innerText = "0";
+            document.getElementById("creator-q-number").innerText = "1";
+            showScreen('screen-creator');
+        }
+
+        function resetQuestionBuilderInputs() {
+            document.getElementById("q-prompt").value = "";
+            document.getElementById("q-ans-correct").value = "";
+            document.getElementById("q-ans-w1").value = "";
+            document.getElementById("q-ans-w2").value = "";
+            document.getElementById("q-ans-w3").value = "";
+        }
+
+        function addQuestionToDraft() {
+            const prompt = document.getElementById("q-prompt").value.trim();
+            const correct = document.getElementById("q-ans-correct").value.trim();
+            const w1 = document.getElementById("q-ans-w1").value.trim();
+            const w2 = document.getElementById("q-ans-w2").value.trim();
+            const w3 = document.getElementById("q-ans-w3").value.trim();
+
+            if (!prompt || !correct || !w1 || !w2 || !w3) {
+                alert("🚨 Form incomplete! Write down your question prompt and all four options.");
+                return;
+            }
+
+            const newQuestionCard = {
+                q: prompt,
+                options: [correct, w1, w2, w3],
+                correct: 0 
+            };
+
+            draftQuestionsArray.push(newQuestionCard);
+            document.getElementById("draft-count").innerText = draftQuestionsArray.length;
+            document.getElementById("creator-q-number").innerText = draftQuestionsArray.length + 1;
+            
+            resetQuestionBuilderInputs();
+            alert("✨ Question card locked into active draft bundle!");
+        }
+
+        function saveCompleteCustomSet() {
+            const title = document.getElementById("set-title-input").value.trim();
+            let author = document.getElementById("set-author-input").value.trim();
+
+            if (!title) {
+                alert("🚨 Missing Set Title Name!");
+                return;
+            }
+            if (draftQuestionsArray.length === 0) {
+                alert("🚨 Add at least 1 question card to publish.");
+                return;
+            }
+            if (!author) author = "AnonymousDev";
+
+            const completeSetObj = {
+                id: "custom_" + Date.now(),
+                title: title,
+                author: author,
+                questions: draftQuestionsArray
+            };
+
+            userData.customSets.push(completeSetObj);
+            globalActivePack = completeSetObj; 
+            updateHUD();
+
+            alert(`🎉 Success! Your custom set "${title}" has been activated!`);
+            showScreen('screen-home');
+        }
+
+        function openPack() {
+            if (userData.tokens < 20) {
+                alert("🚨 Insufficient balance! Play matches to score 20 tokens.");
+                return;
+            }
+            userData.tokens -= 20;
+            updateHUD();
+
+            let pool = [];
+            blookRegistry.forEach(b => {
+                let itemsCount = Math.floor(b.weight * 10);
+                for(let i=0; i < itemsCount; i++) pool.push(b);
+            });
+
+            const drop = pool[Math.floor(Math.random() * pool.length)];
+            userData.inventory[drop.id]++;
+            updateHUD();
+
+            document.getElementById("modal-rarity").className = drop.rarity;
+            document.getElementById("modal-rarity").innerText = `${drop.rarity.toUpperCase()} DROP!`;
+            document.getElementById("modal-emoji").innerText = drop.emoji;
+            document.getElementById("modal-name").innerText = drop.name;
+            document.getElementById("modal-tier").innerText = `Rarity Tier: ${drop.rarity}`;
+            document.getElementById("unlock-modal").classList.remove("hidden");
+        }
+
+        function closeModal() { document.getElementById("unlock-modal").classList.add("hidden"); }
+
+        function viewCollection() {
+            const grid = document.getElementById("collection-grid");
+            grid.innerHTML = "";
+            blookRegistry.forEach(b => {
+                const count = userData.inventory[b.id];
+                const card = document.createElement("div");
+                card.className = `blook-card ${count === 0 ? 'locked' : ''}`;
+                card.innerHTML = `
+                    <div class="blook-emoji">${b.emoji}</div>
+                    <div class="${b.rarity}">${b.name}</div>
+                    <div class="blook-qty">${count > 0 ? `x${count}` : 'LOCKED'}</div>
+                `;
+                grid.appendChild(card);
+            });
+            showScreen('screen-collection');
+        }
+
+        window.onload = () => {
+            const save = localStorage.getItem("arcade_save_data_v5");
+            if (save) {
+                const loaded = JSON.parse(save);
+                if (loaded) {
+                    if (loaded.tokens !== undefined) userData.tokens = loaded.tokens;
+                    if (loaded.inventory) userData.inventory = loaded.inventory;
+                    if (loaded.customSets) userData.customSets = loaded.customSets;
+                }
+            }
+            updateHUD();
+        };
+    </script>
+</body>
+</html>
